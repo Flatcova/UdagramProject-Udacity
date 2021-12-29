@@ -22,7 +22,12 @@ import { V0_FEED_MODELS, V0_USER_MODELS } from "./controllers/v0/model.index";
 
   app.use(bodyParser.json());
 
-  app.use(cors());
+  const corsOptions = {
+    origin: '*',
+    optionsSuccessStatus: 200
+  }
+
+  app.use(cors(corsOptions));
 
   app.use("/api/v0/", IndexRouter);
 
