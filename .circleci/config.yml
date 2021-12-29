@@ -5,12 +5,14 @@ orbs:
   aws-ebcli: circleci/aws-elastic-beanstalk@2.0.1
   aws-s3cli: circleci/aws-s3@3.0.0
 jobs:
-  install-test:
+  deployment:
     docker:
       - image: cimg/node:16.10
     steps:
       - node/install
       - checkout
+      - aws-cli/setup
+      - aws-ebcli/setup
       - run:
           name: Backend-API install
           command: npm run backend:install
@@ -20,18 +22,9 @@ jobs:
       - run:
           name: Backend-API testing
           command: npm run backend:test
-      - run:
-          name: Frontend testing
-          command: npm run frontend:test
-          
-  build-deploy:
-    docker:
-      - image: cimg/node:16.10
-    steps:
-      - node/install
-      - checkout
-      - aws-cli/setup
-      - aws-ebcli/setup
+      # - run:
+      #     name: Frontend testing
+      #     command: npm run frontend:test
       - run:
           name: Installing Typescript global
           command: npm i -g typescript
@@ -50,5 +43,4 @@ jobs:
 workflows:
   deploy:
     jobs:
-      - install-test
-      - build-deploy
+      - deployment
