@@ -1,65 +1,180 @@
+[//]: # (Image Reference)
+[image1]: ./img/s3bucket.jpeg "S3 bucket running"
+[image2]: ./img/rds.jpeg "RDS postgres database"
+[image3]: ./img/eb.jpeg "Elastic Beanstalk server Health and running"
+[image4]: ./img/circleci.jpeg "CircleCi project pipeline"
+
+[image5]: ./img/IAM.jpeg "IAM user created"
+[image6]: ./img/IAM-credentials.jpeg "User credentials"
+[image7]: ./img/s3bucket-frontend.jpeg "S3 public for the frontend"
+[image8]: ./img/circleci-complete.jpeg "CircleCi complete run"
+[image7]: ./img/s3bucket-images.jpeg "S3 for images"
+
 # Udagram
 
-This application is provided to you as an alternative starter project if you do not wish to host your own code done in the previous courses of this nanodegree. The udagram application is a fairly simple application that includes all the major components of a Full-Stack web application.
+This application is provided as an alternative starter project. The udagram application is a fairly simple application that includes all the major components of a Full-Stack web application.
 
-## Getting Started
+The purpose of this project it's to create all the configurations and services on AWS so it would run, creating simple scripts for each section (frontend and backend), and at the end create an automated pipeline with CircleCI. I'll be explaining all the process that was made with images, and also the few changes made on the startup code.
 
-1. Clone this repo locally into the location of your choice.
-1. Move the content of the udagram folder at the root of the repository as this will become the main content of the project.
-1. Open a terminal and navigate to the root of the repo
-1. follow the instructions in the installation step
+## Getting Started with Code
 
-The project can run but is missing some information to connect to the database and storage service. These will be setup during the course of the project
+I was provided with the original repo that you can also download and follow the steps provided: [udagram-starter-project](https://github.com/udacity/nd0067-c4-deployment-process-project-starter)
 
-### Dependencies
+once the repo it's cloned and installed all the dependencies, i procced to create the ``.env`` file inside the udagram-api folder with the following structure.
 
 ```
-- Node v14.15.1 (LTS) or more recent. While older versions can work it is advisable to keep node to latest LTS version
-
-- npm 6.14.8 (LTS) or more recent, Yarn can work but was not tested for this project
-
-- AWS CLI v2, v1 can work but was not tested for this project
-
-- A RDS database running Postgres.
-
-- A S3 bucket for hosting uploaded pictures.
-
+POSTGRES_USERNAME=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=postgres
+DATABASE_PORT=5432
+POSTGRES_HOST=XXXX
+AWS_REGION=us-east-1
+AWS_BUCKET=api-udagram
+JWT_SECRET=XXXX
+AWS_ACCESS_KEY=XXXX
+AWS_SECRET=XXXX
 ```
 
-### Installation
+## AWS S3, RDS, IAM, and EB configurations
 
-Provision the necessary AWS services needed for running the application:
+now that the project was already prepared, I started the configuration of all the AWS services, starting with the RDS, and try the connection on local with the user and password created on the process
 
-1. In AWS, provision a publicly available RDS database running Postgres. <Place holder for link to classroom article>
-1. In AWS, provision a s3 bucket for hosting the uploaded files. <Place holder for tlink to classroom article>
-1. Export the ENV variables needed or use a package like [dotnev](https://www.npmjs.com/package/dotenv)/.
-1. From the root of the repo, navigate udagram-api folder `cd starter/udagram-api` to install the node_modules `npm install`. After installation is done start the api in dev mode with `npm run dev`.
-1. Without closing the terminal in step 1, navigate to the udagram-frontend `cd starter/udagram-frontend` to intall the node_modules `npm install`. After installation is done start the api in dev mode with `npm run start`.
+![RDS postgres database][image2]
 
-## Testing
+When the DB start working the next process was to create a S3 bucket so the app could save the Feed images, so i created a public s3 bucket, enabeling all the CORS.
 
-This project contains two different test suite: unit tests and End-To-End tests(e2e). Follow these steps to run the tests.
+![S3 for images][image9]
 
-1. `cd starter/udagram-frontend`
-1. `npm run test`
-1. `npm run e2e`
+Once everything started working great, i proccede to create the EB application, manually on the AWS console. but error were showing, so I changed a few code, to fix the routes and also changin the way to add the credentials of the images from the S3 bucket.
 
-There are no Unit test on the back-end
+### changin the main call on package.json
+The initial configuration on the package.json was using the ``src/server.js`` that was wrong for the build because the `server.js` file was located on the root, so the first change was to update the `Package.json` file
 
-### Unit Tests:
+Before
+```
+ "name": "udagram-api",
+  "version": "2.0.0",
+  "description": "",
+  "main": "src/server.js",
+ .....
+```
 
-Unit tests are using the Jasmine Framework.
+After
+```
+ "name": "udagram-api",
+  "version": "2.0.0",
+  "description": "",
+  "main": "server.js",
+ .....
+```
 
-### End to End Tests:
+### changin profile default on S3 call
+After deploying the API to the EB server, there was a problem with the credentials when trying to call and upload new images to the S3 bucket. so the method was that the API was calling the local AWS profile, but when on EB there was no AWS file to take the credentials, so I changed the method called on the `aws.ts` file, passing directly the credentials from the ENV
 
-The e2e tests are using Protractor and Jasmine.
+Before
+```
+    ...
+    // Configure AWS
+    const credentials = new AWS.SharedIniFileCredentials({ profile: "default" });
+    ...
+```
 
-## Built With
+After
+```
+    ...
+    // Configure AWS
+    const credentials = new AWS.Credentials({ accessKeyId: process.env.AWS_ACCESS_KEY, secretAccessKey: process.env.AWS_SECRET});
+    ...
+```
 
-- [Angular](https://angular.io/) - Single Page Application Framework
-- [Node](https://nodejs.org) - Javascript Runtime
-- [Express](https://expressjs.com/) - Javascript API Framework
+For obtaining the credentials, I needed to create a new user on the IAM service from AWS and give it the following permissions.
+![User credentials][image6]
 
-## License
+from there the EB Deployment worked fine giving a Health status of OK, and giving us the URL for the API.
+![Elastic Beanstalk server Health and running][image3]
 
-[License](LICENSE.txt)
+Now that the API was up and running, it was time to update the ``apiHost`` value on the `environment.ts` file inside the Frontend application, from localhost to the new url provided by the EB server. the file was located on `src/environments/environment.ts`
+
+Before
+```
+    ...
+    export const environment = {
+    production: false,
+    appName: 'Udagram',
+    apiHost: 'localhost:8080/api/v0'
+    };
+    ...
+```
+
+After
+```
+    ...
+    export const environment = {
+    production: false,
+    appName: 'Udagram',
+    apiHost: 'http://udagram-env.eba-vsctgkv6.us-east-1.elasticbeanstalk.com/api/v0'
+    };
+    ...
+```
+
+Now that everything was updated and working fine on local, it was time to upload the build on the S3 with static website configuration using the AWS console.
+
+![S3 public for the frontend][image7]
+
+## CircleCI configuration
+
+Now that everything was working smothly the next step was to create a pipeline, that help us creating a new deploy, everytime the code was submited on the github repo. for that i created a `config.yml` file with the following structure.
+
+```
+version: 2.1
+orbs:
+  node: circleci/node@5.0.0
+  aws-cli: circleci/aws-cli@2.0.6
+  aws-ebcli: circleci/aws-elastic-beanstalk@2.0.1
+  aws-s3cli: circleci/aws-s3@3.0.0
+jobs:
+  deployment:
+    docker:
+      - image: cimg/node:16.10
+    steps:
+      - node/install
+      - checkout
+      - aws-cli/setup
+      - aws-ebcli/setup
+      - run:
+          name: Backend-API install
+          command: npm run backend:install
+      - run:
+          name: Frontend install
+          command: npm run frontend:install
+      - run:
+          name: Backend-API testing
+          command: npm run backend:test
+      - run:
+          name: Installing Typescript global
+          command: npm i -g typescript
+      - run:
+          name: Backend-API build
+          command: npm run backend:build
+      - run:
+          name: Frontend build
+          command: npm run frontend:build
+      - run:
+          name: Backend-API deploy
+          command: npm run backend:deploy
+      - run:
+          name: Frontend deploy
+          command: npm run frontend:deploy
+workflows:
+  deploy:
+    jobs:
+      - deployment
+```
+
+As you can notice, there are multiple Orbs mostly the AWS so we can deploy everything to our already created services. Now that everything was setup was time to configure the circleCI with the github repo and giving access to make changes and run. 
+
+Up next you can see all the commits and pipe lines that were running, and at the end there is a fully completed one, that checks everything and also deploys to production with the same github hash.
+
+![CircleCi project pipeline][image4]
+
+![CircleCi complete run][image8]
