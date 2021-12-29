@@ -33,6 +33,9 @@ jobs:
       - aws-cli/setup
       - aws-ebcli/setup
       - run:
+          name: Installing Typescript global
+          command: npm i -g typescript
+      - run:
           name: Backend-API build
           command: npm run backend:build
       - run:
