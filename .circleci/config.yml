@@ -4,6 +4,7 @@ orbs:
   aws-cli: circleci/aws-cli@2.0.6
   aws-ebcli: circleci/aws-elastic-beanstalk@2.0.1
   aws-s3cli: circleci/aws-s3@3.0.0
+  tsc: vidsy/typescript@1.2.1
 jobs:
   install-test:
     docker:
@@ -32,6 +33,7 @@ jobs:
       - checkout
       - aws-cli/setup
       - aws-ebcli/setup
+      - tsc/build
       - run:
           name: Backend-API build
           command: npm run backend:build
