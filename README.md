@@ -16,6 +16,9 @@ This application is provided as an alternative starter project. The udagram appl
 
 The purpose of this project it's to create all the configurations and services on AWS so it would run, creating simple scripts for each section (frontend and backend), and at the end create an automated pipeline with CircleCI. I'll be explaining all the process that was made with images, and also the few changes made on the startup code.
 
+Here you can see the project running with some content already: 
+[Udagram finish project](udagram-project-2682.s3-website-us-east-1.amazonaws.com)
+
 ## Getting Started with Code
 
 I was provided with the original repo that you can also download and follow the steps provided: [udagram-starter-project](https://github.com/udacity/nd0067-c4-deployment-process-project-starter)
